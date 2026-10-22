@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Dados de pacientes e arquivos gerados
+/data/
+/output/
+/backup/
+.env
