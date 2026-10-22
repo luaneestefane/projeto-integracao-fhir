@@ -1,15 +1,14 @@
 
-import csv
 import json
 from pathlib import Path
 from datetime import datetime
 
 # Localização dos arquivos
 pasta_projeto = Path(__file__).parent
-arquivo_csv = pasta_projeto / "data" / "patients.csv"
 pasta_saida = pasta_projeto / "output"
+arquivo_validos = pasta_saida / "pacientes_validos.json"
+arquivo_saida = pasta_saida / "patients_fhir.json"
 
-# Cria a pasta de saída, caso não exista
 pasta_saida.mkdir(exist_ok=True)
 
 
@@ -24,7 +23,9 @@ def converter_genero(genero):
 
 
 def converter_data(data):
-    return datetime.strptime(data.strip(), "%d/%m/%Y").strftime("%Y-%m-%d")
+    return datetime.strptime(
+        data.strip(), "%d/%m/%Y"
+    ).strftime("%Y-%m-%d")
 
 
 def criar_patient(dados):
@@ -61,35 +62,42 @@ def criar_patient(dados):
     return patient
 
 
-# Lê o CSV e transforma cada registro em Patient
+# Verifica se a validação foi executada
+if not arquivo_validos.exists():
+    raise SystemExit(
+        "ERRO: pacientes_validos.json não encontrado. "
+        "Execute primeiro: python validar_dados.py"
+    )
+
+# Carrega somente os registros aprovados
+with open(arquivo_validos, "r", encoding="utf-8") as arquivo:
+    dados_validos = json.load(arquivo)
+
 pacientes = []
 erros = []
 
-with open(arquivo_csv, encoding="cp1252", newline="") as arquivo:
-    leitor = csv.DictReader(arquivo)
+# Transforma os registros aprovados em recursos FHIR
+for numero, dados in enumerate(dados_validos, start=1):
+    try:
+        paciente = criar_patient(dados)
+        pacientes.append(paciente)
+    except (ValueError, KeyError, AttributeError) as erro:
+        erros.append({
+            "registro": numero,
+            "erro": str(erro)
+        })
 
-    for linha, dados in enumerate(leitor, start=2):
-        try:
-            paciente = criar_patient(dados)
-            pacientes.append(paciente)
-        except (ValueError, KeyError, AttributeError) as erro:
-            erros.append({
-                "linha": linha,
-                "erro": str(erro)
-            })
-
-# Salva os recursos FHIR em JSON
-arquivo_saida = pasta_saida / "patients_fhir.json"
-
+# Salva os recursos FHIR
 with open(arquivo_saida, "w", encoding="utf-8") as arquivo:
     json.dump(pacientes, arquivo, ensure_ascii=False, indent=2)
 
 print("TRANSFORMAÇÃO CONCLUÍDA!")
+print(f"Pacientes aprovados na validação: {len(dados_validos)}")
 print(f"Pacientes transformados: {len(pacientes)}")
-print(f"Registros com erro: {len(erros)}")
+print(f"Registros com erro na transformação: {len(erros)}")
 print(f"Arquivo gerado: {arquivo_saida}")
 
 if erros:
     print("\nERROS ENCONTRADOS:")
     for erro in erros:
-        print(f"Linha {erro['linha']}: {erro['erro']}")
+        print(f"Registro {erro['registro']}: {erro['erro']}")
