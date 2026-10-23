@@ -1,5 +1,6 @@
 
 import json
+import sys
 from pathlib import Path
 from datetime import datetime
 
@@ -101,3 +102,9 @@ if erros:
     print("\nERROS ENCONTRADOS:")
     for erro in erros:
         print(f"Registro {erro['registro']}: {erro['erro']}")
+
+    # Remove o JSON incompleto
+    arquivo_saida.unlink(missing_ok=True)
+
+    print("\nERRO: Transformação incompleta. Pipeline interrompido.")
+    sys.exit(1)
