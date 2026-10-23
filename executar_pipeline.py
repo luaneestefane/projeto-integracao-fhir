@@ -45,9 +45,15 @@ executar_etapa(
     "transformar_fhir.py"
 )
 
-# Etapa 3: Envio ao HAPI FHIR
+# Etapa 3: Validação dos recursos FHIR
 executar_etapa(
-    "ETAPA 3 - ENVIO AO HAPI FHIR",
+    "ETAPA 3 - VALIDAÇÃO FHIR",
+    "validar_fhir.py"
+)
+
+# Etapa 4: Envio ao HAPI FHIR
+executar_etapa(
+    "ETAPA 4 - ENVIO AO HAPI FHIR",
     "enviar_fhir.py"
 )
 
